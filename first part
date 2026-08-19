@@ -1,0 +1,300 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# **Final Assignment: Create Visualizations using Matplotlib, Seaborn & Folium**\n",
+    "### **Part 1 - Data Visualization Tasks (1.1 - 1.9)**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "%matplotlib inline\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "import folium\n",
+    "\n",
+    "import io\n",
+    "import requests\n",
+    "\n",
+    "URL = \"https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DV0101EN-SkillsNetwork/Data%20Files/historical_automobile_sales.csv\"\n",
+    "resp = requests.get(URL)\n",
+    "df = pd.read_csv(io.StringIO(resp.text))\n",
+    "print('Data downloaded and read into dataframe successfully!')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.1: Line chart to show how automobile sales fluctuate from year to year**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_line = df.groupby('Year')['Automobile_Sales'].mean().reset_index()\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "plt.plot(df_line['Year'], df_line['Automobile_Sales'], marker='o')\n",
+    "plt.xticks(list(range(1980, 2024)), rotation=75)\n",
+    "plt.xlabel('Year')\n",
+    "plt.ylabel('Automobile Sales')\n",
+    "plt.title('Automobile Sales during Recession and Non-Recession Periods')\n",
+    "plt.text(1982, 650, '1981-82 Recession', color='red')\n",
+    "plt.text(2008, 650, '2007-2009 Recession', color='red')\n",
+    "plt.grid(True)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.2: Line chart to show trends in advertising expenditure correlate with automobile sales during non-recession periods**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "non_rec_data = df[df['Recession'] == 0]\n",
+    "df_ad_sales = non_rec_data.groupby('Year')[['Advertising_Expenditure', 'Automobile_Sales']].mean().reset_index()\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "plt.plot(df_ad_sales['Year'], df_ad_sales['Advertising_Expenditure'], label='Advertising Expenditure', marker='o')\n",
+    "plt.plot(df_ad_sales['Year'], df_ad_sales['Automobile_Sales'], label='Automobile Sales', marker='s')\n",
+    "plt.xlabel('Year')\n",
+    "plt.ylabel('Average Value')\n",
+    "plt.title('Advertising Expenditure and Automobile Sales during Non-Recession Periods')\n",
+    "plt.legend()\n",
+    "plt.grid(True)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.3: Bar chart to compare the sales trend per vehicle type for a recession period with a non-recession period**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_bar = df.groupby(['Recession', 'Vehicle_Type'])['Automobile_Sales'].mean().reset_index()\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.barplot(x='Vehicle_Type', y='Automobile_Sales', hue='Recession', data=df_bar)\n",
+    "plt.xlabel('Vehicle Type')\n",
+    "plt.ylabel('Average Automobile Sales')\n",
+    "plt.title('Vehicle-Wise Sales during Recession and Non-Recession Periods')\n",
+    "plt.xticks(rotation=45)\n",
+    "plt.legend(title='Recession', labels=['Non-Recession (0)', 'Recession (1)'])\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.4: Subplots to compare the variations in GDP during recession and non-recession periods**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_data = df[df['Recession'] == 1]\n",
+    "non_rec_data = df[df['Recession'] == 0]\n",
+    "\n",
+    "fig, axes = plt.subplots(1, 2, figsize=(14, 5), sharey=True)\n",
+    "\n",
+    "# Recession GDP subplot\n",
+    "sns.lineplot(x='Year', y='GDP', data=rec_data, ax=axes[0], marker='o', color='red')\n",
+    "axes[0].set_title('GDP Variation During Recession')\n",
+    "axes[0].set_xlabel('Year')\n",
+    "axes[0].set_ylabel('GDP')\n",
+    "\n",
+    "# Non-Recession GDP subplot\n",
+    "sns.lineplot(x='Year', y='GDP', data=non_rec_data, ax=axes[1], marker='o', color='green')\n",
+    "axes[1].set_title('GDP Variation During Non-Recession')\n",
+    "axes[1].set_xlabel('Year')\n",
+    "axes[1].set_ylabel('GDP')\n",
+    "\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.5: Bubble plot for displaying the impact of seasonality on Automobile Sales**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_data = df[df['Recession'] == 1]\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.scatterplot(\n",
+    "    data=rec_data,\n",
+    "    x='Month',\n",
+    "    y='Automobile_Sales',\n",
+    "    size='Seasonality_Weight',\n",
+    "    hue='Seasonality_Weight',\n",
+    "    sizes=(50, 400),\n",
+    "    palette='viridis',\n",
+    "    legend='auto'\n",
+    ")\n",
+    "plt.xlabel('Month')\n",
+    "plt.ylabel('Automobile Sales')\n",
+    "plt.title('Seasonality Impact on Automobile Sales During Recession')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.6: Scatter plot to identify the correlation between average vehicle price and sales volume during recessions**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_data = df[df['Recession'] == 1]\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.scatterplot(x='Price', y='Automobile_Sales', data=rec_data, color='blue', s=70)\n",
+    "plt.xlabel('Average Vehicle Price')\n",
+    "plt.ylabel('Automobile Sales Volume')\n",
+    "plt.title('Relationship between Price and Automobile Sales during Recession')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.7: Pie chart to display the portion of advertising expenditure of XYZAutomotives during recession and non-recession periods**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ad_exp = df.groupby('Recession')['Advertising_Expenditure'].sum()\n",
+    "\n",
+    "plt.figure(figsize=(7, 7))\n",
+    "plt.pie(\n",
+    "    ad_exp,\n",
+    "    labels=['Non-Recession (0)', 'Recession (1)'],\n",
+    "    autopct='%1.1f%%',\n",
+    "    startangle=90,\n",
+    "    colors=['#66b3ff', '#ff9999']\n",
+    ")\n",
+    "plt.title('Advertising Expenditure Distribution (Recession vs Non-Recession)')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.8: Pie chart to display the total Advertisement expenditure for each vehicle type during the recession period**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_data = df[df['Recession'] == 1]\n",
+    "vt_ad_exp = rec_data.groupby('Vehicle_Type')['Advertising_Expenditure'].sum()\n",
+    "\n",
+    "plt.figure(figsize=(8, 8))\n",
+    "plt.pie(\n",
+    "    vt_ad_exp,\n",
+    "    labels=vt_ad_exp.index,\n",
+    "    autopct='%1.1f%%',\n",
+    "    startangle=140\n",
+    ")\n",
+    "plt.title('Total Advertisement Expenditure per Vehicle Type during Recession')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **TASK 1.9: Line chart to analyze the effect of the unemployment rate on vehicle type and sales during the Recession Period**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_data = df[df['Recession'] == 1]\n",
+    "\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.lineplot(\n",
+    "    data=rec_data,\n",
+    "    x='unemployment_rate',\n",
+    "    y='Automobile_Sales',\n",
+    "    hue='Vehicle_Type',\n",
+    "    marker='o',\n",
+    "    ci=None\n",
+    ")\n",
+    "plt.xlabel('Unemployment Rate')\n",
+    "plt.ylabel('Automobile Sales')\n",
+    "plt.title('Effect of Unemployment Rate on Vehicle Type and Sales During Recession')\n",
+    "plt.legend(title='Vehicle Type')\n",
+    "plt.show()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "name": "python",
+   "version": "3.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
